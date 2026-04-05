@@ -1,0 +1,290 @@
+{
+  "realm": "tracking-reporting",
+  "enabled": true,
+  "displayName": "Tracking Reporting",
+  "clients": [
+    {
+      "clientId": "tracking-api",
+      "name": "tracking-api",
+      "enabled": true,
+      "protocol": "openid-connect",
+      "publicClient": true,
+      "directAccessGrantsEnabled": true,
+      "standardFlowEnabled": true,
+      "serviceAccountsEnabled": false,
+      "fullScopeAllowed": true,
+      "redirectUris": [
+        "http://localhost:3000/*",
+        "http://localhost:5173/*",
+        "http://localhost:8080/*"
+      ],
+      "webOrigins": [
+        "*"
+      ],
+      "defaultClientScopes": [
+        "web-origins",
+        "acr",
+        "profile",
+        "roles",
+        "email"
+      ],
+      "optionalClientScopes": [
+        "address",
+        "phone",
+        "offline_access",
+        "microprofile-jwt"
+      ],
+      "protocolMappers": [
+        {
+          "name": "audience",
+          "protocol": "openid-connect",
+          "protocolMapper": "oidc-audience-mapper",
+          "consentRequired": false,
+          "config": {
+            "included.client.audience": "tracking-api",
+            "id.token.claim": "false",
+            "access.token.claim": "true"
+          }
+        }
+      ]
+    }
+  ],
+  "roles": {
+    "realm": [],
+    "client": {
+      "tracking-api": [
+        { "name": "project:view" },
+        { "name": "project:create" },
+        { "name": "project:update" },
+        { "name": "project:delete" },
+
+        { "name": "iteration:view" },
+        { "name": "iteration:create" },
+        { "name": "iteration:update" },
+        { "name": "iteration:delete" },
+
+        { "name": "task:view" },
+        { "name": "task:create" },
+        { "name": "task:update" },
+        { "name": "task:delete" },
+        { "name": "task:assign" },
+        { "name": "task:update-status" },
+        { "name": "task:update-estimation" },
+
+        { "name": "report:view" },
+        { "name": "report:create" },
+        { "name": "report:update" },
+        { "name": "report:delete" },
+        { "name": "report:generate" },
+        { "name": "report:validate" },
+
+        { "name": "team:view" },
+        { "name": "team:create" },
+        { "name": "team:update" },
+        { "name": "team:delete" },
+        { "name": "team:manage-members" },
+
+        { "name": "user:view" },
+        { "name": "user:create" },
+        { "name": "user:update" },
+        { "name": "user:delete" },
+
+        { "name": "permission:view" },
+        { "name": "permission:create" },
+        { "name": "permission:update" },
+        { "name": "permission:delete" },
+
+        { "name": "role:view" },
+        { "name": "role:create" },
+        { "name": "role:update" },
+        { "name": "role:delete" },
+
+        { "name": "audit:view" },
+        { "name": "platform:configure" },
+
+        { "name": "note:create" },
+        { "name": "note:update" },
+
+        { "name": "comment:create" },
+        { "name": "comment:update" }
+      ]
+    }
+  },
+  "users": [
+    {
+      "username": "admin-user",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Admin",
+      "lastName": "User",
+      "email": "admin@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "admin123",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "tracking-api": [
+          "project:view",
+          "project:create",
+          "project:update",
+          "project:delete",
+
+          "iteration:view",
+          "iteration:create",
+          "iteration:update",
+          "iteration:delete",
+
+          "task:view",
+          "task:create",
+          "task:update",
+          "task:delete",
+          "task:assign",
+          "task:update-status",
+          "task:update-estimation",
+
+          "report:view",
+          "report:create",
+          "report:update",
+          "report:delete",
+          "report:generate",
+          "report:validate",
+
+          "team:view",
+          "team:create",
+          "team:update",
+          "team:delete",
+          "team:manage-members",
+
+          "user:view",
+          "user:create",
+          "user:update",
+          "user:delete",
+
+          "permission:view",
+          "permission:create",
+          "permission:update",
+          "permission:delete",
+
+          "role:view",
+          "role:create",
+          "role:update",
+          "role:delete",
+
+          "audit:view",
+          "platform:configure",
+
+          "note:create",
+          "note:update",
+
+          "comment:create",
+          "comment:update"
+        ]
+      }
+    },
+    {
+      "username": "teamleader",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Team",
+      "lastName": "Leader",
+      "email": "teamleader@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "leader123",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "tracking-api": [
+          "project:view",
+          "project:create",
+          "project:update",
+
+          "iteration:view",
+          "iteration:create",
+          "iteration:update",
+
+          "task:view",
+          "task:create",
+          "task:update",
+          "task:assign",
+
+          "report:view",
+          "report:create",
+          "report:delete",
+
+          "team:view",
+          "team:create",
+          "team:update",
+          "team:manage-members",
+
+          "note:create",
+          "note:update",
+
+          "comment:create",
+          "comment:update"
+        ]
+      }
+    },
+    {
+      "username": "teammember",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Team",
+      "lastName": "Member",
+      "email": "teammember@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "member123",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "tracking-api": [
+          "project:view",
+          "iteration:view",
+          "task:view",
+          "task:update-status",
+          "task:update-estimation",
+          "report:view",
+          "note:create",
+          "note:update",
+          "comment:create",
+          "comment:update"
+        ]
+      }
+    },
+    {
+      "username": "observer",
+      "enabled": true,
+      "emailVerified": true,
+      "firstName": "Observer",
+      "lastName": "User",
+      "email": "observer@example.com",
+      "credentials": [
+        {
+          "type": "password",
+          "value": "observer123",
+          "temporary": false
+        }
+      ],
+      "clientRoles": {
+        "tracking-api": [
+          "project:view",
+          "iteration:view",
+          "task:view",
+          "report:view",
+          "report:generate",
+          "report:validate",
+          "team:view",
+          "user:view"
+        ]
+      }
+    }
+  ]
+}

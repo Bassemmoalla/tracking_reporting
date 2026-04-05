@@ -6,6 +6,7 @@ import com.example.tracking_reporting.service.ProjectService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -19,28 +20,33 @@ public class ProjectController {
     private final ProjectService projectService;
 
     @GetMapping
+    @PreAuthorize("hasAuthority('project:view')")
     public List<ProjectResponse> getAll() {
         return projectService.getAll();
     }
 
     @GetMapping("/{id}")
+    @PreAuthorize("hasAuthority('project:view')")
     public ProjectResponse getById(@PathVariable UUID id) {
         return projectService.getById(id);
     }
 
     @PostMapping
     @ResponseStatus(HttpStatus.CREATED)
+    @PreAuthorize("hasAuthority('project:create')")
     public ProjectResponse create(@Valid @RequestBody ProjectRequest request) {
         return projectService.create(request);
     }
 
     @PutMapping("/{id}")
+    @PreAuthorize("hasAuthority('project:update')")
     public ProjectResponse update(@PathVariable UUID id, @Valid @RequestBody ProjectRequest request) {
         return projectService.update(id, request);
     }
 
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
+    @PreAuthorize("hasAuthority('project:delete')")
     public void delete(@PathVariable UUID id) {
         projectService.delete(id);
     }

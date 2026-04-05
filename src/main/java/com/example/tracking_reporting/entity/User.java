@@ -41,6 +41,9 @@ public class User {
     @Column(nullable = false, length = 15)
     private UserStatus status = UserStatus.ACTIVE;
 
+    @Column(unique = true)
+    private String keycloakId;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 

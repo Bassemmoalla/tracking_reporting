@@ -10,6 +10,7 @@ import com.example.tracking_reporting.repository.IterationRepository;
 import com.example.tracking_reporting.repository.ProjectRepository;
 import com.example.tracking_reporting.repository.ReportRepository;
 import com.example.tracking_reporting.repository.TaskRepository;
+import com.example.tracking_reporting.security.OwnershipService;
 import com.example.tracking_reporting.service.ProjectService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -29,12 +30,21 @@ public class ProjectServiceImpl implements ProjectService {
     private final ReportRepository reportRepository;
     private final EntityFinder entityFinder;
     private final ProjectMapper projectMapper;
+    private final OwnershipService ownershipService;
 
     @Override
     @Transactional(readOnly = true)
     public List<ProjectResponse> getAll() {
         return projectRepository.findAll()
                 .stream()
+                .filter(project -> {
+                    try {
+                        ownershipService.checkCanAccessProject(project);
+                        return true;
+                    } catch (Exception ex) {
+                        return false;
+                    }
+                })
                 .map(projectMapper::toResponse)
                 .toList();
     }
@@ -42,12 +52,15 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional(readOnly = true)
     public ProjectResponse getById(UUID id) {
-        return projectMapper.toResponse(getEntityById(id));
+        Project project = getEntityById(id);
+        ownershipService.checkCanAccessProject(project);
+        return projectMapper.toResponse(project);
     }
 
     @Override
     public ProjectResponse create(ProjectRequest request) {
         Team team = entityFinder.getTeam(request.teamId());
+        ownershipService.checkCanCreateProjectForTeam(team.getId());
 
         Project project = Project.builder()
                 .name(request.name())
@@ -63,6 +76,8 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public ProjectResponse update(UUID id, ProjectRequest request) {
         Project project = getEntityById(id);
+        ownershipService.checkCanManageProject(project);
+
         Team team = entityFinder.getTeam(request.teamId());
 
         project.setName(request.name());
@@ -77,6 +92,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     public void delete(UUID id) {
         Project project = getEntityById(id);
+        ownershipService.checkCanManageProject(project);
 
         taskRepository.deleteByProjectId(id);
         reportRepository.deleteByProjectId(id);
