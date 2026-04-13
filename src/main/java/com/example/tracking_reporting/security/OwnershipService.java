@@ -17,6 +17,10 @@ public class OwnershipService {
     private final TeamAssignmentRepository teamAssignmentRepository;
 
     public void checkCanAccessProject(Project project) {
+        if (project == null || project.getTeam() == null || project.getTeam().getId() == null) {
+            throw new AccessDeniedException("Project team information is missing");
+        }
+
         if (isAdmin()) {
             return;
         }
@@ -33,6 +37,10 @@ public class OwnershipService {
     }
 
     public void checkCanManageProject(Project project) {
+        if (project == null || project.getTeam() == null || project.getTeam().getId() == null) {
+            throw new AccessDeniedException("Project team information is missing");
+        }
+
         if (isAdmin()) {
             return;
         }
@@ -49,6 +57,10 @@ public class OwnershipService {
     }
 
     public void checkCanCreateProjectForTeam(java.util.UUID teamId) {
+        if (teamId == null) {
+            throw new AccessDeniedException("Team id is required");
+        }
+
         if (isAdmin()) {
             return;
         }
@@ -67,11 +79,15 @@ public class OwnershipService {
     private boolean isAdmin() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
+        if (authentication == null) {
+            return false;
+        }
+
         return authentication.getAuthorities().stream()
                 .anyMatch(a ->
-                        a.getAuthority().equals("platform:configure")
-                                || a.getAuthority().equals("user:delete")
-                                || a.getAuthority().equals("user:create")
+                        "platform:configure".equals(a.getAuthority())
+                                || "user:delete".equals(a.getAuthority())
+                                || "user:create".equals(a.getAuthority())
                 );
     }
 }

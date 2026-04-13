@@ -1,10 +1,12 @@
 package com.example.tracking_reporting.controller;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
 import java.util.stream.Collectors;
@@ -15,7 +17,9 @@ public class AuthController {
 
     @GetMapping("/me")
     public Map<String, Object> me(Authentication authentication) {
-        Jwt jwt = (Jwt) authentication.getPrincipal();
+        if (authentication == null || !(authentication.getPrincipal() instanceof Jwt jwt)) {
+            throw new ResponseStatusException(HttpStatus.UNAUTHORIZED, "Authenticated user not found");
+        }
 
         return Map.of(
                 "username", jwt.getClaimAsString("preferred_username"),
