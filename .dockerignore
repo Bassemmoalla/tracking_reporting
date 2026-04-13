@@ -1,0 +1,7 @@
+target
+.idea
+.git
+.gitignore
+tracking_reporting_dump.sql
+Dockerfile
+docker-compose.yml

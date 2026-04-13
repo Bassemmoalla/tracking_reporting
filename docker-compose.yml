@@ -12,6 +12,12 @@ services:
       - "3307:3306"
     volumes:
       - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u$$MYSQL_USER -p$$MYSQL_PASSWORD || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 20s
 
   keycloak:
     image: quay.io/keycloak/keycloak:26.1
@@ -19,15 +25,16 @@ services:
     command:
       - start-dev
       - --import-realm
+      - --health-enabled=true
     environment:
       KEYCLOAK_ADMIN: admin
       KEYCLOAK_ADMIN_PASSWORD: admin123
+      KC_HEALTH_ENABLED: "true"
     ports:
       - "8081:8080"
+      - "9000:9000"
     volumes:
       - ./keycloak/realm-export:/opt/keycloak/data/import
-    depends_on:
-      - mysql
 
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:9.3.1
@@ -42,6 +49,38 @@ services:
     volumes:
       - elasticsearch_data:/usr/share/elasticsearch/data
 
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tracking-backend
+    restart: unless-stopped
+    depends_on:
+      mysql:
+        condition: service_healthy
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/tracking_reporting?createDatabaseIfNotExist=true&useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATASOURCE_USERNAME: tracking_user
+      SPRING_DATASOURCE_PASSWORD: tracking_pass
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_ISSUER_URI: http://localhost:8081/realms/tracking-reporting
+      SPRING_SECURITY_OAUTH2_RESOURCESERVER_JWT_JWK_SET_URI: http://keycloak:8080/realms/tracking-reporting/protocol/openid-connect/certs
+    ports:
+      - "8080:8080"
+
+  sonarqube:
+    image: sonarqube
+    container_name: tracking-sonarqube
+    restart: unless-stopped
+    ports:
+      - "9000:9000"
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_logs:/opt/sonarqube/logs
+      - sonarqube_extensions:/opt/sonarqube/extensions
+
 volumes:
   mysql_data:
   elasticsearch_data:
+  sonarqube_data:
+  sonarqube_logs:
+  sonarqube_extensions:
