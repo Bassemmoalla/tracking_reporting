@@ -6,6 +6,7 @@ import com.example.tracking_reporting.entity.Iteration;
 import com.example.tracking_reporting.entity.Project;
 import com.example.tracking_reporting.entity.Task;
 import com.example.tracking_reporting.entity.User;
+import com.example.tracking_reporting.exception.ResourceNotFoundException;
 import com.example.tracking_reporting.helper.EntityFinder;
 import com.example.tracking_reporting.mapper.TaskMapper;
 import com.example.tracking_reporting.repository.TaskRepository;
@@ -25,7 +26,12 @@ public class TaskServiceImpl implements TaskService {
     private final TaskRepository taskRepository;
     private final EntityFinder entityFinder;
     private final TaskMapper taskMapper;
+    private static final String TASK_NOT_FOUND_WITH_ID = "Task not found with id: ";
 
+    private Task findTaskByIdOrThrow(UUID id) {
+        return taskRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(TASK_NOT_FOUND_WITH_ID + id));
+    }
     @Override
     @Transactional(readOnly = true)
     public List<TaskResponse> getAll() {
@@ -38,7 +44,7 @@ public class TaskServiceImpl implements TaskService {
     @Override
     @Transactional(readOnly = true)
     public TaskResponse getById(UUID id) {
-        return taskMapper.toResponse(getEntityById(id));
+        return taskMapper.toResponse(findTaskByIdOrThrow(id));
     }
 
     @Override
@@ -79,7 +85,7 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public TaskResponse update(UUID id, TaskRequest request) {
-        Task task = getEntityById(id);
+        Task task = findTaskByIdOrThrow(id);
         Project project = entityFinder.getProject(request.projectId());
 
         User assignedUser = null;
@@ -105,14 +111,13 @@ public class TaskServiceImpl implements TaskService {
 
     @Override
     public void delete(UUID id) {
-        Task task = getEntityById(id);
+        Task task = findTaskByIdOrThrow(id);
         taskRepository.delete(task);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Task getEntityById(UUID id) {
-        return taskRepository.findById(id)
-                .orElseThrow(() -> new com.example.tracking_reporting.exception.ResourceNotFoundException("Task not found with id: " + id));
+        return findTaskByIdOrThrow(id);
     }
 }

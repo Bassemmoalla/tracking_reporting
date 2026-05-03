@@ -38,7 +38,7 @@ public class IterationServiceImpl implements IterationService {
     @Override
     @Transactional(readOnly = true)
     public IterationResponse getById(UUID id) {
-        return iterationMapper.toResponse(getEntityById(id));
+        return iterationMapper.toResponse(findIterationByIdOrThrow(id));
     }
 
     @Override
@@ -70,7 +70,7 @@ public class IterationServiceImpl implements IterationService {
 
     @Override
     public IterationResponse update(UUID id, IterationRequest request) {
-        Iteration iteration = getEntityById(id);
+        Iteration iteration = findIterationByIdOrThrow(id);
         Project project = entityFinder.getProject(request.projectId());
 
         iteration.setName(request.name());
@@ -87,7 +87,7 @@ public class IterationServiceImpl implements IterationService {
 
     @Override
     public void delete(UUID id) {
-        Iteration iteration = getEntityById(id);
+        Iteration iteration = findIterationByIdOrThrow(id);
         taskRepository.clearIterationFromTasks(id);
         iterationRepository.delete(iteration);
     }
@@ -95,6 +95,10 @@ public class IterationServiceImpl implements IterationService {
     @Override
     @Transactional(readOnly = true)
     public Iteration getEntityById(UUID id) {
+        return findIterationByIdOrThrow(id);
+    }
+
+    private Iteration findIterationByIdOrThrow(UUID id) {
         return entityFinder.getIteration(id);
     }
 }

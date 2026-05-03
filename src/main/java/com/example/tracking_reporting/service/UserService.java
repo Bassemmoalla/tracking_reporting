@@ -21,6 +21,10 @@ import java.util.stream.Collectors;
 @Service
 public class UserService {
 
+    private static final String USER_NOT_FOUND = "User not found";
+    private static final String PERMISSION_GROUP_NOT_FOUND = "Permission group not found";
+    private static final String USER_NOT_FOUND_WITH_ID = "User not found with id: ";
+
     private final UserRepository userRepository;
     private final PermissionGroupRepository permissionGroupRepository;
     private final TeamAssignmentRepository teamAssignmentRepository;
@@ -46,10 +50,8 @@ public class UserService {
 
     @Transactional
     public UserResponse assignPermissionGroup(AssignPermissionGroupToUserRequest request) {
-        User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        PermissionGroup group = permissionGroupRepository.findById(request.permissionGroupId())
-                .orElseThrow(() -> new RuntimeException("Permission group not found"));
+        User user = findUserByIdOrThrow(request.userId());
+        PermissionGroup group = findPermissionGroupByIdOrThrow(request.permissionGroupId());
 
         user.getPermissionGroups().add(group);
         userRepository.saveAndFlush(user);
@@ -63,15 +65,12 @@ public class UserService {
 
     @Transactional(readOnly = true)
     public UserResponse getById(UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return map(user);
+        return map(findUserByIdOrThrow(id));
     }
 
     @Transactional
     public UserResponse update(UUID id, UpdateUserRequest request) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = findUserByIdOrThrow(id);
 
         user.setFirstName(request.firstName());
         user.setLastName(request.lastName());
@@ -85,17 +84,29 @@ public class UserService {
 
     @Transactional
     public void delete(UUID id) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+        User user = findUserByIdOrThrow(id);
 
-        // remove team assignments (FK)
         teamAssignmentRepository.deleteAllByUser_Id(id);
 
-        // detach permission groups (join table)
         user.getPermissionGroups().clear();
         userRepository.saveAndFlush(user);
 
         userRepository.delete(user);
+    }
+
+    public User getEntityById(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND_WITH_ID + id));
+    }
+
+    private User findUserByIdOrThrow(UUID id) {
+        return userRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND));
+    }
+
+    private PermissionGroup findPermissionGroupByIdOrThrow(UUID id) {
+        return permissionGroupRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(PERMISSION_GROUP_NOT_FOUND));
     }
 
     private UserResponse map(User user) {
@@ -110,9 +121,5 @@ public class UserService {
                         .map(PermissionGroup::getName)
                         .collect(Collectors.toSet())
         );
-    }
-    public User getEntityById(UUID id) {
-        return userRepository.findById(id)
-                .orElseThrow(() -> new ResourceNotFoundException("User not found with id: " + id));
     }
 }

@@ -5,10 +5,12 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.core.convert.converter.Converter;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
+import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.security.oauth2.server.resource.authentication.JwtAuthenticationConverter;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.http.HttpMethod;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -22,11 +24,16 @@ public class SecurityConfig {
     private static final String CLIENT_ID = "tracking-api";
 
     @Bean
-    public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
+    public SecurityFilterChain securityFilterChain(HttpSecurity http) {
         http
-                .csrf(csrf -> csrf.disable())
+                .csrf(csrf -> csrf.ignoringRequestMatchers("/api/**"))
+                .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/api/auth/me").authenticated()
+                        .requestMatchers(HttpMethod.POST, "/api/reports/generate").hasAuthority("report:generate")
+                        .requestMatchers(HttpMethod.GET, "/api/reports/**").hasAuthority("report:view")
+                        .requestMatchers(HttpMethod.PUT, "/api/reports/**").hasAuthority("report:validate")
+                        .requestMatchers(HttpMethod.DELETE, "/api/reports/**").hasAuthority("report:validate")
                         .anyRequest().authenticated()
                 )
                 .oauth2ResourceServer(oauth2 -> oauth2

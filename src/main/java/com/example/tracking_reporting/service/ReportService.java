@@ -1,16 +1,18 @@
 package com.example.tracking_reporting.service;
 
-import com.example.tracking_reporting.dto.ReportRequest;
-import com.example.tracking_reporting.dto.ReportResponse;
+import com.example.tracking_reporting.dto.report.GenerateReportRequest;
+import com.example.tracking_reporting.dto.report.GeneratedReportResponse;
+import com.example.tracking_reporting.dto.report.ReportSearchItem;
+import com.example.tracking_reporting.dto.report.UpdateGeneratedReportRequest;
 
 import java.util.List;
 import java.util.UUID;
 
 public interface ReportService {
-    List<ReportResponse> getAll();
-    ReportResponse getById(UUID id);
-    List<ReportResponse> getByProjectId(UUID projectId);
-    ReportResponse create(ReportRequest request);
-    ReportResponse update(UUID id, ReportRequest request);
+    GeneratedReportResponse generate(GenerateReportRequest request);
+    GeneratedReportResponse getById(UUID id);
+    List<GeneratedReportResponse> getAll();
+    List<ReportSearchItem> search(String query);
+    GeneratedReportResponse update(UUID id, UpdateGeneratedReportRequest request);
     void delete(UUID id);
 }

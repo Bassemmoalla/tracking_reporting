@@ -4,6 +4,7 @@ import com.example.tracking_reporting.dto.ProjectRequest;
 import com.example.tracking_reporting.dto.ProjectResponse;
 import com.example.tracking_reporting.entity.Project;
 import com.example.tracking_reporting.entity.Team;
+import com.example.tracking_reporting.exception.ResourceNotFoundException;
 import com.example.tracking_reporting.helper.EntityFinder;
 import com.example.tracking_reporting.mapper.ProjectMapper;
 import com.example.tracking_reporting.repository.IterationRepository;
@@ -23,6 +24,8 @@ import java.util.UUID;
 @RequiredArgsConstructor
 @Transactional
 public class ProjectServiceImpl implements ProjectService {
+
+    private static final String PROJECT_NOT_FOUND_WITH_ID = "Project not found with id: ";
 
     private final ProjectRepository projectRepository;
     private final TaskRepository taskRepository;
@@ -52,7 +55,7 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional(readOnly = true)
     public ProjectResponse getById(UUID id) {
-        Project project = getEntityById(id);
+        Project project = findProjectByIdOrThrow(id);
         ownershipService.checkCanAccessProject(project);
         return projectMapper.toResponse(project);
     }
@@ -75,7 +78,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public ProjectResponse update(UUID id, ProjectRequest request) {
-        Project project = getEntityById(id);
+        Project project = findProjectByIdOrThrow(id);
         ownershipService.checkCanManageProject(project);
 
         Team team = entityFinder.getTeam(request.teamId());
@@ -91,7 +94,7 @@ public class ProjectServiceImpl implements ProjectService {
 
     @Override
     public void delete(UUID id) {
-        Project project = getEntityById(id);
+        Project project = findProjectByIdOrThrow(id);
         ownershipService.checkCanManageProject(project);
 
         taskRepository.deleteByProjectId(id);
@@ -103,6 +106,14 @@ public class ProjectServiceImpl implements ProjectService {
     @Override
     @Transactional(readOnly = true)
     public Project getEntityById(UUID id) {
-        return entityFinder.getProject(id);
+        return findProjectByIdOrThrow(id);
+    }
+
+    private Project findProjectByIdOrThrow(UUID id) {
+        Project project = entityFinder.getProject(id);
+        if (project == null) {
+            throw new ResourceNotFoundException(PROJECT_NOT_FOUND_WITH_ID + id);
+        }
+        return project;
     }
 }

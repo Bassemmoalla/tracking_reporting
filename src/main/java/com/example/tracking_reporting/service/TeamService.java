@@ -22,6 +22,11 @@ import java.util.UUID;
 @Service
 public class TeamService {
 
+    private static final String TEAM_NOT_FOUND = "Team not found";
+    private static final String USER_NOT_FOUND = "User not found";
+    private static final String USER_ALREADY_ASSIGNED_TO_TEAM = "User already assigned to this team";
+    private static final String ASSIGNMENT_NOT_FOUND = "Assignment not found";
+
     private final TeamRepository teamRepository;
     private final UserRepository userRepository;
     private final TeamAssignmentRepository teamAssignmentRepository;
@@ -44,63 +49,82 @@ public class TeamService {
 
     public TeamAssignmentResponse assignUser(AssignUserToTeamRequest request) {
         Team team = teamRepository.findById(request.teamId())
-                .orElseThrow(() -> new RuntimeException("Team not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(TEAM_NOT_FOUND));
+
         User user = userRepository.findById(request.userId())
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                .orElseThrow(() -> new ResourceNotFoundException(USER_NOT_FOUND));
 
         teamAssignmentRepository.findByTeam_IdAndUser_Id(request.teamId(), request.userId())
-                .ifPresent(existing -> { throw new RuntimeException("User already assigned to this team"); });
+                .ifPresent(existing -> {
+                    throw new IllegalStateException(USER_ALREADY_ASSIGNED_TO_TEAM);
+                });
 
-        TeamAssignment a = new TeamAssignment();
-        a.setTeam(team);
-        a.setUser(user);
-        a.setAssignedByUserId(request.assignedByUserId());
-        TeamAssignment saved = teamAssignmentRepository.save(a);
+        TeamAssignment assignment = new TeamAssignment();
+        assignment.setTeam(team);
+        assignment.setUser(user);
+        assignment.setAssignedByUserId(request.assignedByUserId());
 
-        return new TeamAssignmentResponse(saved.getId(), team.getId(), user.getId(), saved.getAssignedAt(), saved.getAssignedByUserId());
+        TeamAssignment saved = teamAssignmentRepository.save(assignment);
+
+        return new TeamAssignmentResponse(
+                saved.getId(),
+                team.getId(),
+                user.getId(),
+                saved.getAssignedAt(),
+                saved.getAssignedByUserId()
+        );
     }
 
     @Transactional(readOnly = true)
     public List<TeamResponse> getAll() {
         return teamRepository.findAll().stream()
-                .map(t -> new TeamResponse(t.getId(), t.getName(), t.getDescription()))
+                .map(team -> new TeamResponse(team.getId(), team.getName(), team.getDescription()))
                 .toList();
     }
 
     @Transactional(readOnly = true)
     public TeamResponse getById(UUID id) {
-        Team t = teamRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
-        return new TeamResponse(t.getId(), t.getName(), t.getDescription());
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(TEAM_NOT_FOUND));
+
+        return new TeamResponse(team.getId(), team.getName(), team.getDescription());
     }
 
     @Transactional
     public TeamResponse update(UUID id, UpdateTeamRequest request) {
-        Team t = teamRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Team not found"));
-        t.setName(request.name());
-        t.setDescription(request.description());
-        Team saved = teamRepository.save(t);
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(TEAM_NOT_FOUND));
+
+        team.setName(request.name());
+        team.setDescription(request.description());
+
+        Team saved = teamRepository.save(team);
         return new TeamResponse(saved.getId(), saved.getName(), saved.getDescription());
     }
 
     @Transactional
     public void delete(UUID id) {
-        // remove assignments first (FK)
         teamAssignmentRepository.deleteAllByTeam_Id(id);
         teamRepository.deleteById(id);
     }
 
-    // "Delete" a membership logically: set unassignedAt
     @Transactional
     public TeamAssignmentResponse unassignUser(UUID teamId, UUID userId) {
-        TeamAssignment a = teamAssignmentRepository.findByTeam_IdAndUser_Id(teamId, userId)
-                .orElseThrow(() -> new RuntimeException("Assignment not found"));
-        a.setUnassignedAt(Instant.now());
-        TeamAssignment saved = teamAssignmentRepository.save(a);
+        TeamAssignment assignment = teamAssignmentRepository.findByTeam_IdAndUser_Id(teamId, userId)
+                .orElseThrow(() -> new ResourceNotFoundException(ASSIGNMENT_NOT_FOUND));
 
-        return new TeamAssignmentResponse(saved.getId(), teamId, userId, saved.getAssignedAt(), saved.getAssignedByUserId());
+        assignment.setUnassignedAt(Instant.now());
+        TeamAssignment saved = teamAssignmentRepository.save(assignment);
+
+        return new TeamAssignmentResponse(
+                saved.getId(),
+                teamId,
+                userId,
+                saved.getAssignedAt(),
+                saved.getAssignedByUserId()
+        );
     }
+
     public Team getEntityById(UUID id) {
         return teamRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + id));

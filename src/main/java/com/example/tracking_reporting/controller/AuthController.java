@@ -9,7 +9,6 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/auth")
@@ -28,7 +27,7 @@ public class AuthController {
                 "authorities", authentication.getAuthorities()
                         .stream()
                         .map(Object::toString)
-                        .collect(Collectors.toList())
+                        .toList()
         );
     }
 }

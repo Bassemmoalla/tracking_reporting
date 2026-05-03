@@ -18,6 +18,8 @@ public class PermissionService {
 
     private final PermissionRepository permissionRepository;
     private final PermissionGroupRepository permissionGroupRepository;
+    private static final String PERMISSION_NOT_FOUND = "Permission not found";
+
 
     public PermissionService(PermissionRepository permissionRepository,
                              PermissionGroupRepository permissionGroupRepository) {
@@ -42,14 +44,16 @@ public class PermissionService {
     @Transactional(readOnly = true)
     public PermissionResponse getById(UUID id) {
         Permission p = permissionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Permission not found"));
+                .orElseThrow(() -> new RuntimeException(PERMISSION_NOT_FOUND));
+
         return map(p);
     }
 
     @Transactional
     public PermissionResponse update(UUID id, UpdatePermissionRequest request) {
         Permission p = permissionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Permission not found"));
+                .orElseThrow(() -> new RuntimeException(PERMISSION_NOT_FOUND));
+
 
         p.setPermissionKey(request.permissionKey());
         p.setName(request.name());
@@ -62,7 +66,8 @@ public class PermissionService {
     @Transactional
     public void delete(UUID id) {
         Permission p = permissionRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Permission not found"));
+                .orElseThrow(() -> new RuntimeException(PERMISSION_NOT_FOUND));
+
 
         // Detach from all groups to avoid FK constraint errors on join table
         List<PermissionGroup> groups = permissionGroupRepository.findAllByPermissions_Id(id);

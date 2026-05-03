@@ -23,6 +23,9 @@ public class PermissionGroupService {
     private final PermissionGroupRepository permissionGroupRepository;
     private final PermissionRepository permissionRepository;
     private final UserRepository userRepository;
+    private static final String PERMISSION_GROUP_NOT_FOUND = "Permission group not found";
+
+
 
     public PermissionGroupService(PermissionGroupRepository permissionGroupRepository,
                                   PermissionRepository permissionRepository,
@@ -42,7 +45,7 @@ public class PermissionGroupService {
     @Transactional
     public PermissionGroupResponse assignPermission(AssignPermissionToGroupRequest request) {
         PermissionGroup group = permissionGroupRepository.findById(request.permissionGroupId())
-                .orElseThrow(() -> new RuntimeException("Permission group not found"));
+                .orElseThrow(() -> new RuntimeException(PERMISSION_GROUP_NOT_FOUND));
         Permission permission = permissionRepository.findById(request.permissionId())
                 .orElseThrow(() -> new RuntimeException("Permission not found"));
 
@@ -59,14 +62,14 @@ public class PermissionGroupService {
     @Transactional(readOnly = true)
     public PermissionGroupResponse getById(UUID id) {
         PermissionGroup group = permissionGroupRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Permission group not found"));
+                .orElseThrow(() -> new RuntimeException(PERMISSION_GROUP_NOT_FOUND));
         return map(group);
     }
 
     @Transactional
     public PermissionGroupResponse update(UUID id, UpdatePermissionGroupRequest request) {
         PermissionGroup group = permissionGroupRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Permission group not found"));
+                .orElseThrow(() -> new RuntimeException(PERMISSION_GROUP_NOT_FOUND));
         group.setName(request.name());
         group.setDescription(request.description());
         return map(permissionGroupRepository.save(group));
@@ -75,7 +78,7 @@ public class PermissionGroupService {
     @Transactional
     public void delete(UUID id) {
         PermissionGroup group = permissionGroupRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("Permission group not found"));
+                .orElseThrow(() -> new RuntimeException(PERMISSION_GROUP_NOT_FOUND));
 
         // Detach from all users (user_permission_groups)
         List<User> users = userRepository.findAllByPermissionGroups_Id(id);
