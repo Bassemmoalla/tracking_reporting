@@ -15,11 +15,19 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class S3StorageService {
 
+    private static final String LOCAL_MINIO_PUBLIC_BASE_URL = "http://localhost:9010";
+
     private final S3Client s3Client;
     private final AwsS3Properties properties;
 
     public UploadResult upload(GeneratedBinaryFile file) {
-        String key = properties.baseFolder() + "/" + Instant.now().toEpochMilli() + "-" + UUID.randomUUID() + "-" + file.filename();
+        String key = properties.baseFolder()
+                + "/"
+                + Instant.now().toEpochMilli()
+                + "-"
+                + UUID.randomUUID()
+                + "-"
+                + file.filename();
 
         PutObjectRequest request = PutObjectRequest.builder()
                 .bucket(properties.bucket())
@@ -29,7 +37,8 @@ public class S3StorageService {
 
         s3Client.putObject(request, RequestBody.fromBytes(file.content()));
 
-        String url = "https://" + properties.bucket() + ".s3.amazonaws.com/" + key;
+        String url = LOCAL_MINIO_PUBLIC_BASE_URL + "/" + properties.bucket() + "/" + key;
+
         return new UploadResult(key, url, file.content().length, file.contentType());
     }
 

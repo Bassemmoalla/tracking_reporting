@@ -1,5 +1,6 @@
 package com.example.tracking_reporting.dto;
 
+import com.example.tracking_reporting.enums.TaskStatus;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 
@@ -13,5 +14,6 @@ public record TaskRequest(
         String description,
         @NotNull UUID projectId,
         UUID assignedUserId,
-        UUID iterationId
+        UUID iterationId,
+        TaskStatus status
 ) {}

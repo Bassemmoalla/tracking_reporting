@@ -1,9 +1,16 @@
 package com.example.tracking_reporting.service.impl;
 
-import com.example.tracking_reporting.dto.report.*;
+import com.example.tracking_reporting.dto.report.GenerateReportRequest;
+
+import com.example.tracking_reporting.dto.report.GeneratedReportResponse;
+import com.example.tracking_reporting.dto.report.ReportDataBundle;
+import com.example.tracking_reporting.dto.report.ReportMetricRow;
+import com.example.tracking_reporting.dto.report.ReportSearchItem;
+import com.example.tracking_reporting.dto.report.UpdateGeneratedReportRequest;
 import com.example.tracking_reporting.entity.Iteration;
 import com.example.tracking_reporting.entity.Project;
 import com.example.tracking_reporting.entity.Report;
+import com.example.tracking_reporting.enums.DocumentFormat;
 import com.example.tracking_reporting.enums.ReportScope;
 import com.example.tracking_reporting.enums.ReportStatus;
 import com.example.tracking_reporting.exception.ResourceNotFoundException;
@@ -16,11 +23,13 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+
+
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import java.util.UUID;
 
 @Service
 @RequiredArgsConstructor
@@ -41,8 +50,13 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public GeneratedReportResponse generate(GenerateReportRequest request) {
         String username = currentUsernameProvider.getCurrentUsername();
-        auditLogService.save("GENERATE_REPORT_REQUEST", username, "Report", null,
-                "scope=" + request.scope() + ", format=" + request.format() + ", period=" + request.periodLabel());
+        auditLogService.save(
+                "GENERATE_REPORT_REQUEST",
+                username,
+                "Report",
+                null,
+                "scope=" + request.scope() + ", format=" + request.format() + ", period=" + request.periodLabel()
+        );
 
         Project project;
         Iteration iteration = null;
@@ -89,7 +103,13 @@ public class ReportServiceImpl implements ReportService {
         Report saved = reportRepository.save(report);
         reportSearchService.index(saved);
 
-        auditLogService.save("GENERATE_REPORT_SUCCESS", username, "Report", saved.getId().toString(), saved.getFileUrl());
+        auditLogService.save(
+                "GENERATE_REPORT_SUCCESS",
+                username,
+                "Report",
+                saved.getId().toString(),
+                saved.getFileUrl()
+        );
 
         return toResponse(saved);
     }
@@ -115,13 +135,50 @@ public class ReportServiceImpl implements ReportService {
     @Override
     public GeneratedReportResponse update(UUID id, UpdateGeneratedReportRequest request) {
         Report report = findByIdOrThrow(id);
+
+        Project project = report.getProject();
+        if (project == null) {
+            throw new IllegalStateException("Report project not found for report id: " + id);
+        }
+
+        Iteration iteration = report.getIteration();
+
+        String oldS3Key = report.getS3Key();
+
+        List<ReportMetricRow> metrics = metricsQueryService.loadProjectMetrics(project.getId(), request.periodLabel());
+        ReportDataBundle dataBundle = new ReportDataBundle(
+                project.getName(),
+                iteration != null ? iteration.getName() : "-",
+                report.getScope().name(),
+                request.periodLabel(),
+                metrics
+        );
+
+        GeneratedBinaryFile binaryFile = pickGenerator(report.getDocumentFormat()).generate(request.title(), dataBundle);
+        S3StorageService.UploadResult uploadResult = s3StorageService.upload(binaryFile);
+
         report.setTitle(request.title());
         report.setPeriodLabel(request.periodLabel());
+        report.setS3Key(uploadResult.key());
+        report.setFileUrl(uploadResult.url());
+        report.setContentType(uploadResult.contentType());
+        report.setFileSize(uploadResult.fileSize());
+        report.setReportStatus(ReportStatus.GENERATED);
 
         Report saved = reportRepository.save(report);
         reportSearchService.index(saved);
 
-        auditLogService.save("UPDATE_REPORT", currentUsernameProvider.getCurrentUsername(), "Report", saved.getId().toString(), "updated metadata");
+        if (oldS3Key != null && !oldS3Key.isBlank() && !oldS3Key.equals(uploadResult.key())) {
+            s3StorageService.delete(oldS3Key);
+        }
+
+        auditLogService.save(
+                "UPDATE_REPORT",
+                currentUsernameProvider.getCurrentUsername(),
+                "Report",
+                saved.getId().toString(),
+                "updated metadata + regenerated file"
+        );
 
         return toResponse(saved);
     }
@@ -136,7 +193,13 @@ public class ReportServiceImpl implements ReportService {
         report.setReportStatus(ReportStatus.DELETED);
         reportRepository.delete(report);
 
-        auditLogService.save("DELETE_REPORT", currentUsernameProvider.getCurrentUsername(), "Report", id.toString(), "deleted report + s3 object + search index");
+        auditLogService.save(
+                "DELETE_REPORT",
+                currentUsernameProvider.getCurrentUsername(),
+                "Report",
+                id.toString(),
+                "deleted report + s3 object + search index"
+        );
     }
 
     private Report findByIdOrThrow(UUID id) {
@@ -144,8 +207,8 @@ public class ReportServiceImpl implements ReportService {
                 .orElseThrow(() -> new ResourceNotFoundException(REPORT_NOT_FOUND));
     }
 
-    private ReportFileGenerator pickGenerator(com.example.tracking_reporting.enums.DocumentFormat format) {
-        Map<com.example.tracking_reporting.enums.DocumentFormat, ReportFileGenerator> byFormat =
+    private ReportFileGenerator pickGenerator(DocumentFormat format) {
+        Map<DocumentFormat, ReportFileGenerator> byFormat =
                 generators.stream().collect(Collectors.toMap(ReportFileGenerator::supports, Function.identity()));
 
         ReportFileGenerator generator = byFormat.get(format);

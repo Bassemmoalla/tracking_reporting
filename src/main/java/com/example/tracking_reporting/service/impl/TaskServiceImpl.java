@@ -6,6 +6,7 @@ import com.example.tracking_reporting.entity.Iteration;
 import com.example.tracking_reporting.entity.Project;
 import com.example.tracking_reporting.entity.Task;
 import com.example.tracking_reporting.entity.User;
+import com.example.tracking_reporting.enums.TaskStatus;
 import com.example.tracking_reporting.exception.ResourceNotFoundException;
 import com.example.tracking_reporting.helper.EntityFinder;
 import com.example.tracking_reporting.mapper.TaskMapper;
@@ -23,15 +24,17 @@ import java.util.UUID;
 @Transactional
 public class TaskServiceImpl implements TaskService {
 
+    private static final String TASK_NOT_FOUND_WITH_ID = "Task not found with id: ";
+
     private final TaskRepository taskRepository;
     private final EntityFinder entityFinder;
     private final TaskMapper taskMapper;
-    private static final String TASK_NOT_FOUND_WITH_ID = "Task not found with id: ";
 
     private Task findTaskByIdOrThrow(UUID id) {
         return taskRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(TASK_NOT_FOUND_WITH_ID + id));
     }
+
     @Override
     @Transactional(readOnly = true)
     public List<TaskResponse> getAll() {
@@ -70,6 +73,8 @@ public class TaskServiceImpl implements TaskService {
             iteration = entityFinder.getIteration(request.iterationId());
         }
 
+        TaskStatus status = request.status() != null ? request.status() : TaskStatus.TODO;
+
         Task task = Task.builder()
                 .name(request.name())
                 .shortText(request.shortText())
@@ -78,6 +83,7 @@ public class TaskServiceImpl implements TaskService {
                 .project(project)
                 .assignedUser(assignedUser)
                 .iteration(iteration)
+                .status(status)
                 .build();
 
         return taskMapper.toResponse(taskRepository.save(task));
@@ -105,6 +111,10 @@ public class TaskServiceImpl implements TaskService {
         task.setProject(project);
         task.setAssignedUser(assignedUser);
         task.setIteration(iteration);
+
+        if (request.status() != null) {
+            task.setStatus(request.status());
+        }
 
         return taskMapper.toResponse(taskRepository.save(task));
     }

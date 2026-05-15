@@ -57,6 +57,14 @@ public class User {
     )
     private Set<PermissionGroup> permissionGroups = new HashSet<>();
 
+    @ManyToMany(fetch = FetchType.EAGER)
+    @JoinTable(
+            name = "user_permissions",
+            joinColumns = @JoinColumn(name = "user_id"),
+            inverseJoinColumns = @JoinColumn(name = "permission_id")
+    )
+    private Set<Permission> permissions = new HashSet<>();
+
     @PreUpdate
     public void preUpdate() {
         this.updatedAt = Instant.now();

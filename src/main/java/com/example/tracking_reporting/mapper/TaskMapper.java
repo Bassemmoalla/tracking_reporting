@@ -34,6 +34,7 @@ public class TaskMapper {
                 assignedUserFullName,
                 task.getIteration() != null ? task.getIteration().getId() : null,
                 task.getIteration() != null ? task.getIteration().getName() : null,
+                task.getStatus(),
                 task.getCreatedAt(),
                 task.getUpdatedAt()
         );

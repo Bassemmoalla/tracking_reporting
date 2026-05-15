@@ -1,5 +1,6 @@
 package com.example.tracking_reporting.entity;
 
+import com.example.tracking_reporting.enums.TaskStatus;
 import jakarta.persistence.*;
 import lombok.*;
 
@@ -42,6 +43,11 @@ public class Task {
     @JoinColumn(name = "iteration_id")
     private Iteration iteration;
 
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false, length = 30)
+    @Builder.Default
+    private TaskStatus status = TaskStatus.TODO;
+
     @Column(nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
@@ -52,6 +58,9 @@ public class Task {
     public void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = LocalDateTime.now();
+        if (this.status == null) {
+            this.status = TaskStatus.TODO;
+        }
     }
 
     @PreUpdate

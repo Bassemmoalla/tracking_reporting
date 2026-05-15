@@ -1,3 +1,4 @@
+
 package com.example.tracking_reporting.dto;
 
 import java.util.Set;
@@ -7,6 +8,6 @@ public record PermissionGroupResponse(
         UUID id,
         String name,
         String description,
-        Set<String> permissions
+        Set<PermissionResponse> permissions
 ) {
 }

@@ -1,5 +1,6 @@
 package com.example.tracking_reporting.controller;
 
+import com.example.tracking_reporting.dto.AssignPermissionGroupToUserRequest;
 import com.example.tracking_reporting.dto.CreateUserRequest;
 import com.example.tracking_reporting.dto.UpdateUserRequest;
 import com.example.tracking_reporting.dto.UserResponse;
@@ -37,6 +38,12 @@ public class UserController {
     @PreAuthorize("hasAuthority('user:create')")
     public UserResponse create(@Valid @RequestBody CreateUserRequest request) {
         return userService.create(request);
+    }
+
+    @PostMapping("/permission-groups")
+    @PreAuthorize("hasAuthority('user:update')")
+    public UserResponse assignPermissionGroup(@Valid @RequestBody AssignPermissionGroupToUserRequest request) {
+        return userService.assignPermissionGroup(request);
     }
 
     @PutMapping("/{id}")
