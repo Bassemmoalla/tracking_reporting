@@ -25,10 +25,21 @@ public class Team {
     @Column(length = 255)
     private String description;
 
+    @Column(nullable = false)
+    private boolean archived = false;
+
     @Column(nullable = false, updatable = false)
     private Instant createdAt = Instant.now();
 
     private Instant updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (this.createdAt == null) {
+            this.createdAt = Instant.now();
+        }
+        this.updatedAt = Instant.now();
+    }
 
     @PreUpdate
     public void preUpdate() {

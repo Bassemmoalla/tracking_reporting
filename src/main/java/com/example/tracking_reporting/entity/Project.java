@@ -32,6 +32,9 @@ public class Project {
 
     private LocalDateTime deadline;
 
+    @Column(nullable = false)
+    private boolean archived = false;
+
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "team_id", nullable = false)
     private Team team;

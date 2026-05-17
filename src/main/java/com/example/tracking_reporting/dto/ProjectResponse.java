@@ -11,6 +11,7 @@ public record ProjectResponse(
         String description,
         ProjectStatus status,
         LocalDateTime deadline,
+        boolean archived,
         UUID teamId,
         String teamName,
         LocalDateTime createdAt,

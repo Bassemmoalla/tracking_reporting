@@ -14,6 +14,7 @@ public class ProjectMapper {
                 project.getDescription(),
                 project.getStatus(),
                 project.getDeadline(),
+                project.isArchived(),
                 project.getTeam().getId(),
                 project.getTeam().getName(),
                 project.getCreatedAt(),

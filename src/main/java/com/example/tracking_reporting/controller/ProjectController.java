@@ -44,6 +44,18 @@ public class ProjectController {
         return projectService.update(id, request);
     }
 
+    @PutMapping("/{id}/archive")
+    @PreAuthorize("hasAuthority('project:update')")
+    public ProjectResponse archive(@PathVariable UUID id) {
+        return projectService.archive(id);
+    }
+
+    @PutMapping("/{id}/restore")
+    @PreAuthorize("hasAuthority('project:update')")
+    public ProjectResponse restore(@PathVariable UUID id) {
+        return projectService.restore(id);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('project:delete')")

@@ -70,6 +70,7 @@ public class ProjectServiceImpl implements ProjectService {
                 .description(request.description())
                 .status(request.status())
                 .deadline(request.deadline())
+                .archived(false)
                 .team(team)
                 .build();
 
@@ -88,6 +89,26 @@ public class ProjectServiceImpl implements ProjectService {
         project.setStatus(request.status());
         project.setDeadline(request.deadline());
         project.setTeam(team);
+
+        return projectMapper.toResponse(projectRepository.save(project));
+    }
+
+    @Override
+    public ProjectResponse archive(UUID id) {
+        Project project = findProjectByIdOrThrow(id);
+        ownershipService.checkCanManageProject(project);
+
+        project.setArchived(true);
+
+        return projectMapper.toResponse(projectRepository.save(project));
+    }
+
+    @Override
+    public ProjectResponse restore(UUID id) {
+        Project project = findProjectByIdOrThrow(id);
+        ownershipService.checkCanManageProject(project);
+
+        project.setArchived(false);
 
         return projectMapper.toResponse(projectRepository.save(project));
     }

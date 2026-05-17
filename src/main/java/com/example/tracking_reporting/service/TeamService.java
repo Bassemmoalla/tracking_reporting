@@ -43,8 +43,10 @@ public class TeamService {
         Team team = new Team();
         team.setName(request.name());
         team.setDescription(request.description());
+        team.setArchived(false);
+
         Team saved = teamRepository.save(team);
-        return new TeamResponse(saved.getId(), saved.getName(), saved.getDescription());
+        return map(saved);
     }
 
     public TeamAssignmentResponse assignUser(AssignUserToTeamRequest request) {
@@ -78,7 +80,7 @@ public class TeamService {
     @Transactional(readOnly = true)
     public List<TeamResponse> getAll() {
         return teamRepository.findAll().stream()
-                .map(team -> new TeamResponse(team.getId(), team.getName(), team.getDescription()))
+                .map(this::map)
                 .toList();
     }
 
@@ -87,7 +89,7 @@ public class TeamService {
         Team team = teamRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException(TEAM_NOT_FOUND));
 
-        return new TeamResponse(team.getId(), team.getName(), team.getDescription());
+        return map(team);
     }
 
     @Transactional
@@ -99,7 +101,27 @@ public class TeamService {
         team.setDescription(request.description());
 
         Team saved = teamRepository.save(team);
-        return new TeamResponse(saved.getId(), saved.getName(), saved.getDescription());
+        return map(saved);
+    }
+
+    @Transactional
+    public TeamResponse archive(UUID id) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(TEAM_NOT_FOUND));
+
+        team.setArchived(true);
+        Team saved = teamRepository.save(team);
+        return map(saved);
+    }
+
+    @Transactional
+    public TeamResponse restore(UUID id) {
+        Team team = teamRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException(TEAM_NOT_FOUND));
+
+        team.setArchived(false);
+        Team saved = teamRepository.save(team);
+        return map(saved);
     }
 
     @Transactional
@@ -128,5 +150,16 @@ public class TeamService {
     public Team getEntityById(UUID id) {
         return teamRepository.findById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Team not found with id: " + id));
+    }
+
+    private TeamResponse map(Team team) {
+        return new TeamResponse(
+                team.getId(),
+                team.getName(),
+                team.getDescription(),
+                team.isArchived(),
+                team.getCreatedAt(),
+                team.getUpdatedAt()
+        );
     }
 }

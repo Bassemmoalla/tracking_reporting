@@ -45,6 +45,18 @@ public class TeamController {
         return teamService.update(id, request);
     }
 
+    @PutMapping("/{id}/archive")
+    @PreAuthorize("hasAuthority('team:update')")
+    public TeamResponse archive(@PathVariable UUID id) {
+        return teamService.archive(id);
+    }
+
+    @PutMapping("/{id}/restore")
+    @PreAuthorize("hasAuthority('team:update')")
+    public TeamResponse restore(@PathVariable UUID id) {
+        return teamService.restore(id);
+    }
+
     @DeleteMapping("/{id}")
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PreAuthorize("hasAuthority('team:delete')")
